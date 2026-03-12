@@ -131,6 +131,10 @@ class RadioController:
                 pass
         self.active_channels.clear()
 
+        # Single multicast destination for the entire app — all receivers
+        # share one RTP stream, each identified by its own SSRC
+        app_multicast_ip = generate_multicast_ip("repeater-monitor")
+
         # Create new channels
         for rep in repeaters:
             try:
@@ -142,7 +146,7 @@ class RadioController:
                     preset="nfm", # Narrow FM for repeaters
                     sample_rate=12000,
                     encoding=Encoding.OPUS, # efficient over websockets
-                    destination=generate_multicast_ip(str(freq_hz))
+                    destination=app_multicast_ip
                 )
                 
                 # Keep SSRC internal only
