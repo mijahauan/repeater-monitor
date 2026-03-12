@@ -21,25 +21,6 @@ async def lifespan(app: FastAPI):
     load_local_data()
     await controller.connect()
     
-    # Setup activity callback from radio_controller
-    def broadcast_activity(freq_hz: float, is_active: bool, snr: float):
-        msg = {
-            "type": "activity",
-            "freq": freq_hz,
-            "isActive": is_active,
-            "snr": snr
-        }
-        # Run in event loop
-        try:
-            loop = asyncio.get_running_loop()
-            for ws in active_websockets:
-                 asyncio.run_coroutine_threadsafe(ws.send_json(msg), loop)
-        except RuntimeError:
-            pass
-
-    controller.on_activity_change = broadcast_activity
-    await controller.start_listener()
-    
     yield
     
     # Shutdown

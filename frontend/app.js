@@ -22,6 +22,7 @@ const audioPanel = document.getElementById('audio-panel');
 const stopAudioBtn = document.getElementById('stopAudioBtn');
 const audioRepeaterCallsign = document.getElementById('audio-repeater-callsign');
 const audioRepeaterFreq = document.getElementById('audio-repeater-freq');
+const resumeAudioBtn = document.getElementById('resumeAudioBtn');
 
 // Custom Icons
 const defaultIcon = L.divIcon({
@@ -185,15 +186,29 @@ let nextAudioTime = 0;
 
 function initAudio() {
     if (!audioCtx) {
-        // ka9q RadiodStream typically emits 48000 Hz or the channel's sample rate.
-        // The backend asks for 12000 Hz in radio_controller.py
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 12000 });
+        // Remove forced sampleRate as it can cause issues on Safari/macOS
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        console.log('AudioContext initialized at rate:', audioCtx.sampleRate);
     }
     if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
+        audioCtx.resume().then(() => {
+            console.log('AudioContext resumed successfully');
+        });
     }
     nextAudioTime = 0;
+    updateAudioStatus();
 }
+
+function updateAudioStatus() {
+    if (audioCtx && audioCtx.state === 'suspended') {
+        resumeAudioBtn.classList.remove('hidden');
+    } else {
+        resumeAudioBtn.classList.add('hidden');
+    }
+}
+
+// Poll status for Safari/iMac compatibility
+setInterval(updateAudioStatus, 1000);
 
 function listenToRepeater(freqHz, callsign, freq) {
     // Disconnect old audio if any
@@ -211,12 +226,26 @@ function listenToRepeater(freqHz, callsign, freq) {
     wsAudio = new WebSocket(`${protocol}//${window.location.host}/ws/audio/${freqHz}`);
     wsAudio.binaryType = 'arraybuffer';
 
+    let frameCount = 0;
     wsAudio.onmessage = (event) => {
-        // Data is raw Float32Array from backend RadiodStream
-        const floats = new Float32Array(event.data);
-        if (floats.length === 0) return;
+        frameCount++;
+        if (frameCount % 100 === 0) {
+            console.log(`Received 100 audio frames. Buffer state: ${audioCtx.state}`);
+        }
 
-        const buffer = audioCtx.createBuffer(1, floats.length, audioCtx.sampleRate);
+        // Data is now Int16Array from backend (Opus decoded or S16LE)
+        const int16 = new Int16Array(event.data);
+        if (int16.length === 0) return;
+
+        // Convert to Float32Array normalized for WebAudio [-1.0, 1.0]
+        const floats = new Float32Array(int16.length);
+        for (let i = 0; i < int16.length; i++) {
+            floats[i] = int16[i] / 32768.0;
+        }
+
+        // All streams are now aligned to 12000Hz (Opus and S16LE)
+        const rate = 12000;
+        const buffer = audioCtx.createBuffer(1, floats.length, rate);
         buffer.copyToChannel(floats, 0);
 
         const source = audioCtx.createBufferSource();
@@ -224,9 +253,17 @@ function listenToRepeater(freqHz, callsign, freq) {
         source.connect(audioCtx.destination);
 
         // Schedule playback smoothly
+        const drift = nextAudioTime - audioCtx.currentTime;
         if (nextAudioTime < audioCtx.currentTime) {
+            if (drift < -0.1) {
+                console.warn(`Audio drift detected (late): ${drift.toFixed(3)}s. Resetting.`);
+            }
             nextAudioTime = audioCtx.currentTime + 0.05; // 50ms buffer
+        } else if (drift > 1.0) {
+            console.warn(`Audio drift detected (early): ${drift.toFixed(3)}s. Resetting.`);
+            nextAudioTime = audioCtx.currentTime + 0.05;
         }
+
         source.start(nextAudioTime);
         nextAudioTime += buffer.duration;
     };
@@ -235,12 +272,36 @@ function listenToRepeater(freqHz, callsign, freq) {
     map.closePopup();
 }
 
+stopAudioBtn.onclick = () => {
+    if (wsAudio) {
+        wsAudio.onmessage = null; // Prevent processing queued packets
+        wsAudio.close();
+        wsAudio = null;
+    }
+    if (audioCtx) {
+        // Suspending context immediately stops all scheduled audio
+        audioCtx.suspend();
+    }
+    audioPanel.classList.add('hidden');
+    audioRepeaterCallsign.textContent = 'None';
+    // Clear list selection
+    document.querySelectorAll('.repeater-item').forEach(el => el.classList.remove('active'));
+};
 stopAudioBtn.addEventListener('click', () => {
     if (wsAudio) {
         wsAudio.close();
         wsAudio = null;
     }
     audioPanel.classList.add('hidden');
+});
+
+resumeAudioBtn.addEventListener('click', () => {
+    if (audioCtx) {
+        audioCtx.resume().then(() => {
+            console.log('Audio manually resumed via button');
+            updateAudioStatus();
+        });
+    }
 });
 
 // Event Listeners

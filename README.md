@@ -1,6 +1,6 @@
 # repeater-monitor
 
-A web-based VHF/UHF repeater monitor built on [ka9q-radio](https://github.com/ka9q/ka9q-radio) and [ka9q-python](https://github.com/ka9q/ka9q-python).
+A web-based VHF/UHF repeater monitor built on [ka9q-radio](https://github.com/ka9q/ka9q-radio) and [ka9q-python](https://github.com/mijahauan/ka9q-python).
 
 Displays nearby repeaters on a live map, monitors them for activity via SNR-based squelch, and streams audio to the browser in real time.
 
@@ -8,7 +8,9 @@ Displays nearby repeaters on a live map, monitors them for activity via SNR-base
 
 The application connects to a running `radiod` instance through `ka9q-python`. It tells `ka9q-python` which frequencies to monitor (NFM demodulation at 12 kHz sample rate) and the library handles all RTP stream management, SSRC allocation, and multicast routing internally.
 
-When a repeater's SNR exceeds the squelch threshold, the map marker turns green and the signal meter animates. Clicking "Listen Live" on any repeater opens a `ManagedStream` that delivers decoded audio samples over a WebSocket to the browser's Web Audio API.
+When a repeater's SNR exceeds the squelch threshold, the map marker turns green and the signal meter animates. Clicking "Listen Live" on any repeater opens a `ManagedStream` that delivers decoded audio samples over a WebSocket. 
+
+**Note on Audio Alignment:** The Opus audio stream is aligned to 12000Hz (240 samples per 20ms) to match the internal `radiod` timing. This ensures a stable, gap-free stream without the repetitive noise common in mismatched decoding rates.
 
 ## Architecture
 

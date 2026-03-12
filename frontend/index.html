@@ -62,7 +62,7 @@
                 <!-- Squelch -->
                 <div class="control-group slider-container">
                     <label for="squelchSlider">Squelch (SNR dB): <span id="squelchValue">10</span> dB</label>
-                    <input type="range" id="squelchSlider" min="0" max="40" step="0.5" value="10">
+                    <input type="range" id="squelchSlider" min="-20" max="40" step="0.5" value="10">
                 </div>
 
                 <!-- Radius -->
@@ -84,6 +84,7 @@
                         <div class="bar"></div>
                     </div>
                 </div>
+                <button id="resumeAudioBtn" class="hidden" style="margin-top: 1rem; width: 100%; background: var(--active);">UNMUTE / RESUME AUDIO</button>
                 <button id="stopAudioBtn" class="danger">Stop Listening</button>
             </section>
 
