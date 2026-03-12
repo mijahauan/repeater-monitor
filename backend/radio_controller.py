@@ -4,7 +4,6 @@ from typing import Dict, Any, Callable
 from ka9q.types import Encoding
 from ka9q.control import RadiodControl
 from ka9q.monitor import ChannelMonitor
-from ka9q.addressing import generate_multicast_ip
 
 logger = logging.getLogger(__name__)
 
@@ -131,11 +130,7 @@ class RadioController:
                 pass
         self.active_channels.clear()
 
-        # Single multicast destination for the entire app — all receivers
-        # share one RTP stream, each identified by its own SSRC
-        app_multicast_ip = generate_multicast_ip("repeater-monitor")
-
-        # Create new channels
+        # Create new channels — ka9q-python manages the multicast destination
         for rep in repeaters:
             try:
                 freq_hz = float(rep.get("Downlink", rep.get("freq", 0))) * 1e6
@@ -145,8 +140,7 @@ class RadioController:
                     frequency_hz=freq_hz,
                     preset="nfm", # Narrow FM for repeaters
                     sample_rate=12000,
-                    encoding=Encoding.OPUS, # efficient over websockets
-                    destination=app_multicast_ip
+                    encoding=Encoding.OPUS # efficient over websockets
                 )
                 
                 # Keep SSRC internal only
