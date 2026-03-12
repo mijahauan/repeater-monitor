@@ -1,0 +1,17 @@
+[project]
+name = "repeater-monitor"
+version = "0.1.0"
+description = "A web application to visualize and listen to local ham radio repeaters using ka9q-radio."
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "websockets",
+    "maidenhead",
+    "httpx",
+    "ka9q-python",
+    "numpy"
+]
+
+[tool.setuptools]
+packages = ["backend"]

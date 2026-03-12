@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>radiod Repeater Map</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/style.css?v=2">
+</head>
+
+<body>
+    <div id="app-container">
+        <!-- Sidebar -->
+        <aside id="sidebar">
+            <header class="header">
+                <h1>radiod Map</h1>
+                <p>Live VHF/UHF Repeater Monitoring</p>
+                <div class="status-indicator">
+                    <span id="ws-status" class="status-dot disconnected"></span>
+                    <span id="ws-text">Disconnected</span>
+                </div>
+            </header>
+
+            <section class="controls">
+                <!-- Radiod Host FQDN -->
+                <div class="control-group">
+                    <label for="hostInput">Radiod Host (FQDN)</label>
+                    <div class="input-with-button">
+                        <input type="text" id="hostInput" placeholder="e.g. airspy-status.local"
+                            value="airspy-status.local">
+                    </div>
+                </div>
+
+                <!-- Location Input -->
+                <div class="control-group">
+                    <label for="locationInput">Maidenhead Grid Square or Lat,Lon</label>
+                    <div class="input-with-button">
+                        <input type="text" id="locationInput" placeholder="e.g. EM38ww" value="EM38ww">
+                        <button id="searchBtn">SCAN</button>
+                    </div>
+                </div>
+
+                <!-- Band Selection -->
+                <div class="control-group">
+                    <label for="bandSelect">Band Segment (5 MHz Airspy BW)</label>
+                    <select id="bandSelect">
+                        <option value="2m">2m (144.0 - 148.0 MHz)</option>
+                        <option value="1.25m">1.25m (222.0 - 225.0 MHz)</option>
+                        <option value="70cm_1">70cm (420.0 - 425.0 MHz)</option>
+                        <option value="70cm_2">70cm (425.0 - 430.0 MHz)</option>
+                        <option value="70cm_3">70cm (430.0 - 435.0 MHz)</option>
+                        <option value="70cm_4">70cm (435.0 - 440.0 MHz)</option>
+                        <option value="70cm_5">70cm (440.0 - 445.0 MHz)</option>
+                        <option value="70cm_6">70cm (445.0 - 450.0 MHz)</option>
+                    </select>
+                </div>
+
+                <!-- Squelch -->
+                <div class="control-group slider-container">
+                    <label for="squelchSlider">Squelch (SNR dB): <span id="squelchValue">10</span> dB</label>
+                    <input type="range" id="squelchSlider" min="0" max="40" step="0.5" value="10">
+                </div>
+
+                <!-- Radius -->
+                <div class="control-group slider-container">
+                    <label for="radiusSlider">Search Radius: <span id="radiusValue">150</span> km</label>
+                    <input type="range" id="radiusSlider" min="10" max="1000" step="10" value="150">
+                </div>
+            </section>
+
+            <!-- Active Audio Player Element -->
+            <section id="audio-panel" class="hidden">
+                <div class="audio-info">
+                    <h3>Streaming Audio</h3>
+                    <p id="audio-repeater-callsign">W1AW</p>
+                    <p id="audio-repeater-freq">146.520 MHz</p>
+                    <div class="waveform-anim">
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                    </div>
+                </div>
+                <button id="stopAudioBtn" class="danger">Stop Listening</button>
+            </section>
+
+            <section id="repeater-list-container">
+                <h3>Discovered Repeaters (<span id="repeaterCount">0</span>)</h3>
+                <ul id="repeaterList">
+                    <!-- List items generated via JS -->
+                </ul>
+            </section>
+
+        </aside>
+
+        <!-- Main Map Area -->
+        <main id="map-container">
+            <div id="map"></div>
+        </main>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- Opus Web Audio Decoder (Wait. Browsers don't natively play RTP Opus over websockets without MSE or WASM. We'll use Aurora.js / Opus.js or an audio worker. For simplicity in UI, we mock the worker in app.js and use Web Audio API) -->
+    <!-- We will use a lightweight Opus decoder if necessary, but latest browsers support Opus in MediaSource or Web Audio API if framed properly. The simplest is a fast ogg wrapper or native WebAudio decodeAudioData if we package frames, but raw opus packets require an external decoder WASM like libopus.wasm -->
+
+    <!-- Main JS Application -->
+    <script src="/static/app.js?v=2"></script>
+</body>
+
+</html>

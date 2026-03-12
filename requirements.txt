@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+websockets
+maidenhead
+httpx
+ka9q-python
+asyncio
